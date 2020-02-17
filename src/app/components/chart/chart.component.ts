@@ -1,7 +1,6 @@
 import { Component, ElementRef, HostListener, Input, OnInit, ViewChild } from '@angular/core';
 import { DataService } from '../../services/data.service';
 import { ITemp } from '../../../types';
-import { consoleTestResultHandler } from 'tslint/lib/test';
 
 @Component({
   selector: 'app-chart',
@@ -32,8 +31,8 @@ export class ChartComponent implements OnInit {
   };
 
   // Сетка
-  xGrid = 20;
-  yGrid = 20;
+  fixedXGrid = 20;
+  fixedYGrid = 20;
 
   // Базовые параметры графика
   maxHeight = 24;
@@ -41,6 +40,7 @@ export class ChartComponent implements OnInit {
   step = 20;
   valStep = 0.5;
   xStartPoint = 4;
+
   valQty = 0;
 
   private readonly data: ITemp[];
@@ -100,19 +100,19 @@ export class ChartComponent implements OnInit {
     this.ctx.save();
     this.ctx.beginPath();
 
-    let xGrid = this.xGrid;
-    let yGrid = this.yGrid;
+    let xGrid = this.fixedXGrid;
+    let yGrid = this.fixedYGrid;
 
-    while (xGrid < this.canvas.nativeElement.height) {
-      this.ctx.moveTo(0, xGrid);
-      this.ctx.lineTo(this.canvas.nativeElement.width, xGrid);
-      xGrid += this.step;
+    while (yGrid < this.canvas.nativeElement.height) {
+      this.ctx.moveTo(0, yGrid);
+      this.ctx.lineTo(this.canvas.nativeElement.width, yGrid);
+      yGrid += this.step;
     }
 
-    while (yGrid < this.canvas.nativeElement.width) {
-      this.ctx.moveTo(yGrid, 0);
-      this.ctx.lineTo(yGrid, this.canvas.nativeElement.height);
-      yGrid += this.step;
+    while (xGrid < this.canvas.nativeElement.width) {
+      this.ctx.moveTo(xGrid, 0);
+      this.ctx.lineTo(xGrid, this.canvas.nativeElement.height);
+      xGrid += this.step;
     }
 
     this.ctx.strokeStyle = '#dddddd';
@@ -122,8 +122,9 @@ export class ChartComponent implements OnInit {
   // Рисует оси
   drawAxes(): void {
     let yPlot = 2 + this.maxHeight;
-    let xPlot = this.xStartPoint;
+    // let xPlot = this.xStartPoint;
     let valStep = this.minVal();
+    this.valQty = 0;
 
     this.ctx.beginPath();
     this.ctx.strokeStyle = '#000000';
@@ -176,7 +177,7 @@ export class ChartComponent implements OnInit {
       this.ctx.lineTo(this.segment(xPlot), this.ySegment(-this.getPos(this.range[i].v) + startPos));
     }
 
-    console.log(this.minVal(), this.maxVal(), this.allRange());
+    console.log(this.maxHeight, this.maxWidth, this.step, this.valStep, this.xStartPoint, this.valQty);
     this.ctx.stroke();
   }
 
