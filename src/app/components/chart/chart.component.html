@@ -1,0 +1,12 @@
+<div class="wrapper">
+
+  <canvas width="1000" height="600" #canvas></canvas>
+
+  <svg #slider class="slider">
+    <rect #sliderAll id="background" x="0" width="1000" height="50"></rect>
+    <ng-container>
+      <rect #sliderRange (mousedown)="onMouseDown($event)" id="extent" [attr.x]="rect.x" width="100" height="50"></rect>
+    </ng-container>
+  </svg>
+
+</div>
