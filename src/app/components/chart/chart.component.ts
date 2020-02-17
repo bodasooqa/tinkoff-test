@@ -100,16 +100,19 @@ export class ChartComponent implements OnInit {
     this.ctx.save();
     this.ctx.beginPath();
 
-    while (this.xGrid < this.canvas.nativeElement.height) {
-      this.ctx.moveTo(0, this.xGrid);
-      this.ctx.lineTo(this.canvas.nativeElement.width, this.xGrid);
-      this.xGrid += this.step;
+    let xGrid = this.xGrid;
+    let yGrid = this.yGrid;
+
+    while (xGrid < this.canvas.nativeElement.height) {
+      this.ctx.moveTo(0, xGrid);
+      this.ctx.lineTo(this.canvas.nativeElement.width, xGrid);
+      xGrid += this.step;
     }
 
-    while (this.yGrid < this.canvas.nativeElement.width) {
-      this.ctx.moveTo(this.yGrid, 0);
-      this.ctx.lineTo(this.yGrid, this.canvas.nativeElement.height);
-      this.yGrid += this.step;
+    while (yGrid < this.canvas.nativeElement.width) {
+      this.ctx.moveTo(yGrid, 0);
+      this.ctx.lineTo(yGrid, this.canvas.nativeElement.height);
+      yGrid += this.step;
     }
 
     this.ctx.strokeStyle = '#dddddd';
@@ -150,7 +153,7 @@ export class ChartComponent implements OnInit {
     // }
 
     this.ctx.stroke();
-    console.log(yPlot);
+    // console.log(yPlot);
   }
 
   // Рисует график
@@ -163,7 +166,6 @@ export class ChartComponent implements OnInit {
 
     this.ctx.moveTo(this.segment(this.xStartPoint), this.segment(26) - this.ySegment(startPos));
     this.ctx.translate(this.segment(this.xStartPoint), this.segment(26) - this.ySegment(startPos));
-    // this.ctx.lineTo(this.segment(this.xStartPoint), this.ySegment(17) );
 
     for (let i = 0; i < this.range.length; i += Math.floor(this.range.length / 50)) {
       xPlot += this.maxWidth / this.dataService.getDates(this.range).length * 80;
@@ -174,13 +176,14 @@ export class ChartComponent implements OnInit {
       this.ctx.lineTo(this.segment(xPlot), this.ySegment(-this.getPos(this.range[i].v) + startPos));
     }
 
-    console.log(startPos, xPlot);
+    console.log(this.minVal(), this.maxVal(), this.allRange());
     this.ctx.stroke();
   }
 
   initChart() {
     this.ctx.restore();
     this.ctx.clearRect(0, 0, 1000, 600);
+
     this.drawGrids();
     this.drawAxes();
     this.drawChart();
