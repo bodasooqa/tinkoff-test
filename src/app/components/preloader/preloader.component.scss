@@ -1,0 +1,41 @@
+$spinkit-size: 4em !default;
+$spinkit-spinner-color: rgba(255, 221, 45, .75) !default;
+
+.preloader {
+  position: absolute;
+  $rectCount: 5;
+  $animationDuration: 1.2s;
+  $delayRange: 0.4s;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+
+  width: $spinkit-size * 1.5;
+  height: $spinkit-size;
+  margin: auto;
+  text-align: center;
+  font-size: 1em;
+
+  .rect {
+    margin: 0 2px;
+    background-color: $spinkit-spinner-color;
+    height: 100%;
+    width: .5em;
+    display: inline-block;
+    animation: sk-wave-stretch-delay $animationDuration infinite ease-in-out;
+  }
+
+  @for $i from 1 through $rectCount {
+    .rect-#{$i} { animation-delay: - $animationDuration + $delayRange / ($rectCount - 1) * ($i - 1); }
+  }
+}
+
+@keyframes sk-wave-stretch-delay {
+  0%, 40%, 100% {
+    transform: scaleY(0.4);
+  }
+  20% {
+    transform: scaleY(1.0);
+  }
+}

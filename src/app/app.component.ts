@@ -1,26 +1,15 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { ITemp } from '../types';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { DataService } from './services/data.service';
 
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AppComponent implements OnInit {
-
-  public dataLength: number;
-
+export class AppComponent {
   constructor(private dataService: DataService) {
     this.dataService.getData();
-
-    this.dataService.dataLength.subscribe(res => {
-      this.dataLength = res;
-    });
-  }
-
-  ngOnInit(): void {
-
   }
 }

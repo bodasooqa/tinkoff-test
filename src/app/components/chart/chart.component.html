@@ -1,12 +1,27 @@
 <div class="wrapper">
 
-  <canvas width="1000" height="600" #canvas></canvas>
+  <div class="canvas">
+    <app-preloader *ngIf="!(error || (data && data.length))"></app-preloader>
+    <span class="error" *ngIf="error">{{error.message}}</span>
+    <canvas width="1000" height="600" #canvas></canvas>
+  </div>
 
   <svg #slider class="slider">
-    <rect #sliderAll id="background" x="0" width="1000" height="50"></rect>
-    <ng-container>
-      <rect #sliderRange (mousedown)="onMouseDown($event)" id="extent" [attr.x]="rect.x" width="100" height="50"></rect>
-    </ng-container>
+    <rect rx="5" ry="5" #sliderAll id="background" x="0" width="1000" height="50"></rect>
+
+    <rect #sliderRange id="extent" [attr.x]="rect.x"
+          rx="5" ry="5" [attr.width]="rect.width" height="50"></rect>
+    <rect [attr.x]="rect.x" class="corner"
+          (mousedown)="resizeRange($event, 'left')" rx="5" ry="5" width="10" height="50"></rect>
+    <rect [attr.x]="rect.x + rect.width - 10" class="corner"
+          (mousedown)="resizeRange($event, 'right')" rx="5" ry="5" width="10" height="50"></rect>
+    <rect [attr.x]="rect.x + 4" id="center"
+          (mousedown)="moveRange($event)" rx="5" ry="5" [attr.width]="rect.width - 8" height="50"></rect>
   </svg>
+
+  <div class="dates">
+    <span>{{firstDate}}</span>
+    <span>{{lastDate}}</span>
+  </div>
 
 </div>

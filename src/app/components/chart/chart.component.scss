@@ -6,10 +6,28 @@
   min-height: 100vh;
   width: fit-content;
   margin: auto;
+  &:before {
+    content: '';
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+  }
   canvas {
     border: 1px solid lightgrey;
     background: white;
   }
+}
+
+.canvas {
+  position: relative;
+}
+
+.error {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
 }
 
 .slider {
@@ -27,7 +45,23 @@
 
 #extent {
   position: relative;
-  cursor: move;
   fill: rgba(255, 255, 255, 0.5);
   visibility: visible;
+}
+
+.corner {
+  fill: rgb(200, 200, 200);
+  cursor: ew-resize;
+}
+
+#center {
+  fill: #f3f3f3;
+  cursor: move;
+}
+
+.dates {
+  display: flex;
+  width: 1000px;
+  justify-content: space-between;
+  padding: 5px 0;
 }

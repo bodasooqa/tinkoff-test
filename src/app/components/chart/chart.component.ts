@@ -1,11 +1,16 @@
-import { Component, ElementRef, HostListener, Input, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import { DataService } from '../../services/data.service';
 import { ITemp } from '../../../types';
+import { Observable } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+
+let raf;
 
 @Component({
   selector: 'app-chart',
   templateUrl: './chart.component.html',
-  styleUrls: ['./chart.component.scss']
+  styleUrls: ['./chart.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ChartComponent implements OnInit {
   // Определяем контекст канваса
@@ -21,13 +26,25 @@ export class ChartComponent implements OnInit {
   sliderAllWidth: number;
   sliderRangeWidth: number;
 
-  @Input() dataLength: number;
+  data$: Observable<ITemp[]>;
+  public data: ITemp[];
+
+  error$: Observable<HttpErrorResponse>;
+  public error: HttpErrorResponse;
+
+  firstDate: string = null;
+  lastDate: string = null;
+
+  firstRangeDate: string = null;
+  lastRangeDate: string = null;
 
   moving = false;
+  resize: string = null;
   movingStart = null;
+  resizeStart = null;
   rect = {
-    x: 500,
-    width: null
+    x: 700,
+    width: 100
   };
 
   // Сетка
@@ -42,12 +59,11 @@ export class ChartComponent implements OnInit {
   xStartPoint = 4;
 
   valQty = 0;
-
-  private readonly data: ITemp[];
   range: ITemp[];
 
-  constructor(private dataService: DataService) {
-    this.data = dataService.data;
+  constructor(private dataService: DataService, private changeDetectorRef: ChangeDetectorRef) {
+    this.data$ = dataService.data;
+    this.error$ = dataService.error;
   }
 
   // Отдает кол-во требуемых сегментов сетки
@@ -87,7 +103,7 @@ export class ChartComponent implements OnInit {
 
   // Кратность значений оси Y
   rangeMultiplicity(): number {
-    return Math.round(this.allRange() / 20);
+    return Math.floor(this.allRange() / 20);
   }
 
   // Начальная позиция на графике
@@ -154,7 +170,6 @@ export class ChartComponent implements OnInit {
     // }
 
     this.ctx.stroke();
-    // console.log(yPlot);
   }
 
   // Рисует график
@@ -162,8 +177,9 @@ export class ChartComponent implements OnInit {
     // Устанавливаем начальную точку
     const startPos = this.getPos(this.range[0].v);
     let xPlot = 0;
+
     this.ctx.beginPath();
-    this.ctx.strokeStyle = '#1c93d8';
+    this.ctx.lineWidth = 3;
 
     this.ctx.moveTo(this.segment(this.xStartPoint), this.segment(26) - this.ySegment(startPos));
     this.ctx.translate(this.segment(this.xStartPoint), this.segment(26) - this.ySegment(startPos));
@@ -177,8 +193,29 @@ export class ChartComponent implements OnInit {
       this.ctx.lineTo(this.segment(xPlot), this.ySegment(-this.getPos(this.range[i].v) + startPos));
     }
 
-    console.log(this.maxHeight, this.maxWidth, this.step, this.valStep, this.xStartPoint, this.valQty);
     this.ctx.stroke();
+    this.ctx.beginPath();
+    this.ctx.strokeStyle = '#000000';
+    this.ctx.fillStyle = 'rgba(255, 221, 45, 0.7)';
+    this.ctx.lineWidth = 1;
+    xPlot = 0;
+
+    setTimeout(() => {
+
+
+      for (let i = 0; i < this.range.length; i += Math.floor(this.range.length / 50)) {
+        xPlot += this.maxWidth / this.dataService.getDates(this.range).length * 80;
+        if (this.range[i] === this.range[0]) {
+          continue;
+        }
+
+        this.ctx.fillRect(this.segment(xPlot - 2.7), this.ySegment(-this.getPos(this.range[i].v) + startPos - 2.5), 60, 15);
+        this.ctx.strokeText(this.range[i].t, this.segment(xPlot), this.ySegment(-this.getPos(this.range[i].v) + startPos));
+
+        this.ctx.stroke();
+      }
+    }, 0);
+
   }
 
   initChart() {
@@ -197,51 +234,123 @@ export class ChartComponent implements OnInit {
   }
 
   setRange() {
-    const piecesPerSegment = this.dataLength / this.sliderAllWidth;
+    const piecesPerSegment = this.data.length / this.sliderAllWidth;
 
     const startRangePoint = Math.floor(this.rect.x) * piecesPerSegment;
-    const endRangePoint = Math.floor(this.rect.x + this.sliderRangeWidth) * piecesPerSegment;
+    const endRangePoint = Math.floor(this.rect.x + this.rect.width) * piecesPerSegment;
 
     this.range = this.data.slice(startRangePoint, endRangePoint);
+
+    this.firstRangeDate = this.range[0].t;
+    this.lastRangeDate = this.range[this.range.length - 1].t;
 
     this.initChart();
   }
 
-  onMouseDown(event) {
+  moveRange(event) {
     this.movingStart = this.screenToSVGCoords(event);
     this.moving = true;
   }
 
+  resizeRange(event, side) {
+    this.movingStart = this.screenToSVGCoords(event);
+    this.resize = side;
+    this.resizeStart = event.offsetX - this.movingStart;
+
+    console.log(side);
+  }
+
+  // Передвижение слайдера
+  sliderMoving(pos: number): void {
+    if (pos >= 0 && pos + this.rect.width <= this.sliderAllWidth) {
+      this.rect.x = pos;
+    } else if (pos < 0) {
+      this.rect.x = 0;
+    } else if (pos + this.rect.width > this.sliderAllWidth) {
+      this.rect.x = this.sliderAllWidth - this.rect.width;
+    }
+  }
+
+  // Изменение размера слайдера
+  sliderResize(pos) {
+    const minWidth = 100;
+    if (this.resize === 'left') {
+      this.rect.x = pos;
+      this.rect.width = (this.resizeStart - this.rect.x) + this.sliderRangeWidth;
+
+      if (pos >= 0 && this.rect.width >= minWidth && pos + this.rect.width <= this.sliderAllWidth) {
+        this.rect.x = pos;
+      } else if (pos < 0) {
+        this.rect.x = 0;
+      } else if (this.sliderAllWidth - pos <= minWidth) {
+        this.rect.x = this.sliderAllWidth - minWidth;
+        this.rect.width = minWidth;
+      } else if (this.rect.width < minWidth) {
+        this.rect.width = minWidth;
+      }
+    }
+  }
+
   @HostListener('mousemove', ['$event'])
   moveSlider(event) {
-    if (this.moving) {
+    if (this.moving || this.resize) {
       const cursorPosition = event.offsetX - this.movingStart;
 
-      if (cursorPosition >= 0 && cursorPosition + this.sliderRangeWidth <= this.sliderAllWidth) {
-        this.rect.x = cursorPosition;
-      } else if (cursorPosition < 0) {
-        this.rect.x = 0;
-      } else if (cursorPosition + this.sliderRangeWidth > this.sliderAllWidth) {
-        this.rect.x = this.sliderAllWidth - this.sliderRangeWidth;
+      if (this.moving) {
+        raf = requestAnimationFrame(() => {
+          this.sliderMoving(cursorPosition);
+        });
       }
+
+      if (this.resize) {
+        raf = requestAnimationFrame(() => {
+          this.sliderResize(cursorPosition);
+        });
+      }
+
+      event.preventDefault();
     }
   }
 
   @HostListener('mouseup')
   onMouseUp() {
-    if (this.moving) {
-      this.setRange();
+    if (this.moving || this.resize) {
+      cancelAnimationFrame(raf);
     }
 
-    this.moving = false;
+    if (this.moving) {
+      this.setRange();
+      this.moving = false;
+    }
+
+    if (this.resize) {
+      this.sliderRangeWidth = this.rect.width;
+      this.resize = null;
+    }
   }
 
   ngOnInit(): void {
     this.ctx = this.canvas.nativeElement.getContext('2d');
 
-    this.sliderAllWidth = this.sliderAll.nativeElement.width.baseVal.value;
-    this.sliderRangeWidth = this.sliderRange.nativeElement.width.baseVal.value;
+    this.error$.subscribe(res => {
+      this.error = res;
+      this.changeDetectorRef.detectChanges();
+    });
 
-    this.setRange();
+    this.data$.subscribe(res => {
+      this.data = res;
+
+      if (this.data) {
+        this.firstDate = this.dataService.getFirstDate(this.data);
+        this.lastDate = this.dataService.getLastDate(this.data);
+
+        this.sliderAllWidth = this.sliderAll.nativeElement.width.baseVal.value;
+        this.sliderRangeWidth = this.rect.width;
+
+        this.changeDetectorRef.detectChanges();
+
+        this.setRange();
+      }
+    });
   }
 }
