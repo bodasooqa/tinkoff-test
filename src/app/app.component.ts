@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { DataService } from './services/data.service';
 
 
 @Component({
@@ -9,7 +8,6 @@ import { DataService } from './services/data.service';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppComponent {
-  constructor(private dataService: DataService) {
-    this.dataService.getData();
+  constructor() {
   }
 }

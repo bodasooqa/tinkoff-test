@@ -25,8 +25,8 @@ export class DataService {
     return data.map(item => item.v);
   }
 
-  public getData(): void {
-    this.networkService.getTemperature().subscribe(
+  public getData(type: string): void {
+    this.networkService[`get_${type}`]().subscribe(
       (res: ITemp[]) => {
         this._data.next(res);
       },

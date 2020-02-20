@@ -13,7 +13,7 @@ import { PrecipitationComponent } from './pages/precipitation/precipitation.comp
 const routes: Routes = [
   { path: '', redirectTo: 'temperature', pathMatch: 'full' },
   { path: 'temperature', component: TemperatureComponent },
-  { path: 'precipitation', component: PrecipitationComponent },
+  { path: 'precipitation', component: TemperatureComponent },
   { path: '**', redirectTo: 'temperature' }
 ];
 

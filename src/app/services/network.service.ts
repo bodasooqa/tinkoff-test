@@ -11,11 +11,11 @@ export class NetworkService {
 
   constructor(private httpClient: HttpClient) { }
 
-  public getTemperature() {
+  public get_temperature() {
     return this.httpClient.get(`${this.url}/temperature`);
   }
 
-  public getPrecipitation() {
+  public get_precipitation() {
     return this.httpClient.get(`${this.url}/precipitation`);
   }
 }

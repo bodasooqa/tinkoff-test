@@ -3,7 +3,7 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
-  HostListener,
+  HostListener, Input,
   OnDestroy,
   OnInit,
   ViewChild
@@ -34,6 +34,8 @@ export class ChartComponent implements OnInit, OnDestroy {
 
   sliderAllWidth: number;
   sliderRangeWidth: number;
+
+  @Input() private type$: Observable<string>;
 
   data$: Observable<ITemp[]>;
   public data: ITemp[];
@@ -372,6 +374,13 @@ export class ChartComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.ctx = this.canvas.nativeElement.getContext('2d');
+
+    this.subscriptions.push(
+      this.type$.subscribe(res => {
+        console.log(res);
+        this.dataService.getData(res);
+      })
+    );
 
     this.subscriptions.push(
       this.error$.subscribe(res => {
