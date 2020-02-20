@@ -1,16 +1,16 @@
 .wrapper {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
   width: fit-content;
-  margin: auto;
+  margin: 1em auto auto;
   &:before {
     content: '';
     position: absolute;
     width: 100vw;
-    height: 100vh;
+    height: 100%;
   }
   canvas {
     border: 1px solid lightgrey;
@@ -64,4 +64,5 @@
   width: 1000px;
   justify-content: space-between;
   padding: 5px 0;
+  font-weight: 300;
 }
