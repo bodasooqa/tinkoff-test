@@ -1,7 +1,16 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  HostListener,
+  OnDestroy,
+  OnInit,
+  ViewChild
+} from '@angular/core';
 import { DataService } from '../../services/data.service';
 import { ITemp } from '../../../types';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 
 let raf;
@@ -12,7 +21,7 @@ let raf;
   styleUrls: ['./chart.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ChartComponent implements OnInit {
+export class ChartComponent implements OnInit, OnDestroy {
   // Определяем контекст канваса
   @ViewChild('canvas', { static: true }) canvas: ElementRef<HTMLCanvasElement>;
 
@@ -32,20 +41,24 @@ export class ChartComponent implements OnInit {
   error$: Observable<HttpErrorResponse>;
   public error: HttpErrorResponse;
 
+  // Отображение крайних дат на слайдере
   firstDate: string = null;
   lastDate: string = null;
 
+  // Отображение крайних дат на диапазоне значений
   firstRangeDate: string = null;
   lastRangeDate: string = null;
 
+  // Базовые параметры слайдера
   moving = false;
   resize: string = null;
   movingStart = null;
   resizeStart = null;
   rect = {
-    x: 700,
+    x: 0,
     width: 100
   };
+  range: ITemp[];
 
   // Сетка
   fixedXGrid = 20;
@@ -57,9 +70,10 @@ export class ChartComponent implements OnInit {
   step = 20;
   valStep = 0.5;
   xStartPoint = 4;
-
   valQty = 0;
-  range: ITemp[];
+
+  // Заводим массив подписок для отписки в OnDestroy
+  subscriptions: Subscription[] = [];
 
   constructor(private dataService: DataService, private changeDetectorRef: ChangeDetectorRef) {
     this.data$ = dataService.data;
@@ -154,7 +168,6 @@ export class ChartComponent implements OnInit {
     preCtx.strokeStyle = '#dddddd';
     preCtx.stroke();
 
-
     this.render(preCanvas);
   }
 
@@ -239,20 +252,18 @@ export class ChartComponent implements OnInit {
 
   initChart() {
     this.ctx.restore();
-    this.ctx.clearRect(0, 0, 1000, 600);
+    this.ctx.clearRect(0, 0, this.canvas.nativeElement.width, this.canvas.nativeElement.height);
 
     this.drawGrids();
     this.drawAxes();
     this.drawChart();
-
-    // console.log(this.allRange(), this.minVal(), this.maxVal(), this.range);
   }
 
-  screenToSVGCoords(event) {
+  screenToSVGCoords(event): number {
     return event.clientX - this.sliderRange.nativeElement.getBoundingClientRect().x;
   }
 
-  setRange() {
+  setRange(): void {
     const piecesPerSegment = this.data.length / this.sliderAllWidth;
 
     const startRangePoint = Math.floor(this.rect.x) * piecesPerSegment;
@@ -266,17 +277,17 @@ export class ChartComponent implements OnInit {
     this.initChart();
   }
 
-  moveRange(event) {
+  // Mousedown событие на передвижение
+  moveRange(event): void {
     this.movingStart = this.screenToSVGCoords(event);
     this.moving = true;
   }
 
-  resizeRange(event, side) {
+  // Mousedown событие на изменение размера
+  resizeRange(event, side): void {
     this.movingStart = this.screenToSVGCoords(event);
     this.resize = side;
     this.resizeStart = event.offsetX - this.movingStart;
-
-    console.log(side);
   }
 
   // Передвижение слайдера
@@ -291,7 +302,7 @@ export class ChartComponent implements OnInit {
   }
 
   // Изменение размера слайдера
-  sliderResize(pos) {
+  sliderResize(pos): void {
     const minWidth = 100;
     if (this.resize === 'left') {
       if (pos >= 0) {
@@ -322,7 +333,7 @@ export class ChartComponent implements OnInit {
   }
 
   @HostListener('mousemove', ['$event'])
-  moveSlider(event) {
+  moveSlider(event): void {
     if (this.moving || this.resize) {
       const cursorPosition = event.offsetX - this.movingStart;
 
@@ -343,7 +354,7 @@ export class ChartComponent implements OnInit {
   }
 
   @HostListener('mouseup')
-  onMouseUp() {
+  onMouseUp(): void {
     if (this.moving || this.resize) {
       cancelAnimationFrame(raf);
     }
@@ -362,25 +373,35 @@ export class ChartComponent implements OnInit {
   ngOnInit(): void {
     this.ctx = this.canvas.nativeElement.getContext('2d');
 
-    this.error$.subscribe(res => {
-      this.error = res;
-      this.changeDetectorRef.detectChanges();
-    });
-
-    this.data$.subscribe(res => {
-      this.data = res;
-
-      if (this.data) {
-        this.firstDate = this.dataService.getFirstDate(this.data);
-        this.lastDate = this.dataService.getLastDate(this.data);
-
-        this.sliderAllWidth = this.sliderAll.nativeElement.width.baseVal.value;
-        this.sliderRangeWidth = this.rect.width;
-
+    this.subscriptions.push(
+      this.error$.subscribe(res => {
+        this.error = res;
         this.changeDetectorRef.detectChanges();
+      })
+    );
 
-        this.setRange();
-      }
+    this.subscriptions.push(
+      this.data$.subscribe(res => {
+        this.data = res;
+
+        if (this.data) {
+          this.firstDate = this.dataService.getFirstDate(this.data);
+          this.lastDate = this.dataService.getLastDate(this.data);
+
+          this.sliderAllWidth = this.sliderAll.nativeElement.width.baseVal.value;
+          this.sliderRangeWidth = this.rect.width;
+
+          this.changeDetectorRef.detectChanges();
+
+          this.setRange();
+        }
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(item => {
+      item.unsubscribe();
     });
   }
 }
