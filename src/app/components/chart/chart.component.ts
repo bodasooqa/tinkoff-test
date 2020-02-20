@@ -111,65 +111,84 @@ export class ChartComponent implements OnInit {
     return (value - this.minVal()) / 0.5;
   }
 
+  // Создаем новый canvas для предварительного рендеринга
+  preCanvas(): HTMLCanvasElement {
+    const preCanvas: HTMLCanvasElement = document.createElement('canvas');
+    preCanvas.width = this.canvas.nativeElement.width;
+    preCanvas.height = this.canvas.nativeElement.height;
+
+    return preCanvas;
+  }
+
+  // Рендеринг
+  render(preCanvas: HTMLCanvasElement): void {
+    raf = requestAnimationFrame(() => {
+      this.ctx.drawImage(preCanvas, 0, 0);
+    });
+  }
+
   // Рисует сетку
   drawGrids(): void {
     this.ctx.save();
-    this.ctx.beginPath();
+
+    const preCanvas = this.preCanvas();
+    const preCtx: CanvasRenderingContext2D = preCanvas.getContext('2d');
+
+    preCtx.beginPath();
 
     let xGrid = this.fixedXGrid;
     let yGrid = this.fixedYGrid;
 
-    while (yGrid < this.canvas.nativeElement.height) {
-      this.ctx.moveTo(0, yGrid);
-      this.ctx.lineTo(this.canvas.nativeElement.width, yGrid);
+    while (yGrid < preCanvas.height) {
+      preCtx.moveTo(0, yGrid);
+      preCtx.lineTo(preCanvas.width, yGrid);
       yGrid += this.step;
     }
 
-    while (xGrid < this.canvas.nativeElement.width) {
-      this.ctx.moveTo(xGrid, 0);
-      this.ctx.lineTo(xGrid, this.canvas.nativeElement.height);
+    while (xGrid < preCanvas.width) {
+      preCtx.moveTo(xGrid, 0);
+      preCtx.lineTo(xGrid, preCanvas.height);
       xGrid += this.step;
     }
 
-    this.ctx.strokeStyle = '#dddddd';
-    this.ctx.stroke();
+    preCtx.strokeStyle = '#dddddd';
+    preCtx.stroke();
+
+
+    this.render(preCanvas);
   }
 
   // Рисует оси
   drawAxes(): void {
     let yPlot = 2 + this.maxHeight;
-    // let xPlot = this.xStartPoint;
     let valStep = this.minVal();
     this.valQty = 0;
 
-    this.ctx.beginPath();
-    this.ctx.strokeStyle = '#000000';
+    const preCanvas = this.preCanvas();
+    const preCtx: CanvasRenderingContext2D = preCanvas.getContext('2d');
 
-    this.ctx.moveTo(this.segment(this.xStartPoint), this.segment(2));
-    this.ctx.lineTo(this.segment(this.xStartPoint), this.segment(2 + this.maxHeight));
-    this.ctx.lineTo(this.segment(48), this.segment(2 + this.maxHeight));
+    preCtx.beginPath();
+    preCtx.strokeStyle = '#000000';
 
-    this.ctx.textAlign = 'end';
+    preCtx.moveTo(this.segment(this.xStartPoint), this.segment(2));
+    preCtx.lineTo(this.segment(this.xStartPoint), this.segment(2 + this.maxHeight));
+    preCtx.lineTo(this.segment(48), this.segment(2 + this.maxHeight));
+
+    preCtx.textAlign = 'end';
 
     // Ось y
     while (valStep < this.maxVal() + this.valStep) {
-      this.ctx.strokeText(String(valStep), this.segment(this.xStartPoint - 0.5), this.segment(yPlot));
-      this.ctx.moveTo(this.segment(this.xStartPoint - 0.4), this.segment(yPlot));
-      this.ctx.lineTo(this.segment(48), this.segment(yPlot));
+      preCtx.strokeText(String(valStep), this.segment(this.xStartPoint - 0.5), this.segment(yPlot));
+      preCtx.moveTo(this.segment(this.xStartPoint - 0.4), this.segment(yPlot));
+      preCtx.lineTo(this.segment(48), this.segment(yPlot));
       yPlot -= this.maxHeight / (this.allRange()) / 2 * this.rangeMultiplicity();
       valStep += this.valStep * this.rangeMultiplicity();
       this.valQty++;
     }
 
-    // this.ctx.textAlign = 'start';
+    preCtx.stroke();
 
-    // Ось x
-    // for (const item of this.dataService.getDates(this.range)) {
-    //   this.ctx.strokeText(item, this.segment(xPlot), this.segment(this.maxHeight + 3));
-    //   xPlot += this.maxWidth / this.dataService.getDates(this.range).length - 0.1;
-    // }
-
-    this.ctx.stroke();
+    this.render(preCanvas);
   }
 
   // Рисует график
@@ -178,11 +197,14 @@ export class ChartComponent implements OnInit {
     const startPos = this.getPos(this.range[0].v);
     let xPlot = 0;
 
-    this.ctx.beginPath();
-    this.ctx.lineWidth = 3;
+    const preCanvas = this.preCanvas();
+    const preCtx: CanvasRenderingContext2D = preCanvas.getContext('2d');
 
-    this.ctx.moveTo(this.segment(this.xStartPoint), this.segment(26) - this.ySegment(startPos));
-    this.ctx.translate(this.segment(this.xStartPoint), this.segment(26) - this.ySegment(startPos));
+    preCtx.beginPath();
+    preCtx.lineWidth = 3;
+
+    preCtx.moveTo(this.segment(this.xStartPoint), this.segment(26) - this.ySegment(startPos));
+    preCtx.translate(this.segment(this.xStartPoint), this.segment(26) - this.ySegment(startPos));
 
     for (let i = 0; i < this.range.length; i += Math.floor(this.range.length / 50)) {
       xPlot += this.maxWidth / this.dataService.getDates(this.range).length * 80;
@@ -190,32 +212,29 @@ export class ChartComponent implements OnInit {
         continue;
       }
 
-      this.ctx.lineTo(this.segment(xPlot), this.ySegment(-this.getPos(this.range[i].v) + startPos));
+      preCtx.lineTo(this.segment(xPlot), this.ySegment(-this.getPos(this.range[i].v) + startPos));
     }
 
-    this.ctx.stroke();
-    this.ctx.beginPath();
-    this.ctx.strokeStyle = '#000000';
-    this.ctx.fillStyle = 'rgba(255, 221, 45, 0.7)';
-    this.ctx.lineWidth = 1;
+    preCtx.stroke();
+    preCtx.beginPath();
+    preCtx.strokeStyle = '#000000';
+    preCtx.fillStyle = 'rgba(255, 221, 45, 0.7)';
+    preCtx.lineWidth = 1;
     xPlot = 0;
 
-    setTimeout(() => {
-
-
-      for (let i = 0; i < this.range.length; i += Math.floor(this.range.length / 50)) {
-        xPlot += this.maxWidth / this.dataService.getDates(this.range).length * 80;
-        if (this.range[i] === this.range[0]) {
-          continue;
-        }
-
-        this.ctx.fillRect(this.segment(xPlot - 2.7), this.ySegment(-this.getPos(this.range[i].v) + startPos - 2.5), 60, 15);
-        this.ctx.strokeText(this.range[i].t, this.segment(xPlot), this.ySegment(-this.getPos(this.range[i].v) + startPos));
-
-        this.ctx.stroke();
+    for (let i = 0; i < this.range.length; i += Math.floor(this.range.length / 50)) {
+      xPlot += this.maxWidth / this.dataService.getDates(this.range).length * 80;
+      if (this.range[i] === this.range[0]) {
+        continue;
       }
-    }, 0);
 
+      preCtx.fillRect(this.segment(xPlot - 0.2), this.ySegment(-this.getPos(this.range[i].v) + startPos - 3), 60, 15);
+      preCtx.strokeText(this.range[i].t, this.segment(xPlot), this.ySegment(-this.getPos(this.range[i].v) + startPos));
+
+      preCtx.stroke();
+    }
+
+    this.render(preCanvas);
   }
 
   initChart() {
@@ -275,8 +294,10 @@ export class ChartComponent implements OnInit {
   sliderResize(pos) {
     const minWidth = 100;
     if (this.resize === 'left') {
-      this.rect.x = pos;
-      this.rect.width = (this.resizeStart - this.rect.x) + this.sliderRangeWidth;
+      if (pos >= 0) {
+        this.rect.x = pos;
+        this.rect.width = this.resizeStart - this.rect.x + this.sliderRangeWidth;
+      }
 
       if (pos >= 0 && this.rect.width >= minWidth && pos + this.rect.width <= this.sliderAllWidth) {
         this.rect.x = pos;
@@ -287,6 +308,15 @@ export class ChartComponent implements OnInit {
         this.rect.width = minWidth;
       } else if (this.rect.width < minWidth) {
         this.rect.width = minWidth;
+      }
+    }
+
+    if (this.resize === 'right') {
+      this.rect.width = pos - this.rect.x + this.sliderRangeWidth;
+      if (this.rect.width <= minWidth) {
+        this.rect.width = minWidth;
+      } else if (this.rect.x + this.rect.width >= this.sliderAllWidth) {
+        this.rect.width = this.sliderAllWidth - this.rect.x;
       }
     }
   }
