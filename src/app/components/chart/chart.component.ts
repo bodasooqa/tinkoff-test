@@ -221,13 +221,23 @@ export class ChartComponent implements OnInit, OnDestroy {
     preCtx.moveTo(this.segment(this.xStartPoint), this.segment(26) - this.ySegment(startPos));
     preCtx.translate(this.segment(this.xStartPoint), this.segment(26) - this.ySegment(startPos));
 
-    for (let i = 0; i < this.range.length; i += Math.floor(this.range.length / 50)) {
-      xPlot += this.maxWidth / this.dataService.getDates(this.range).length * 80;
-      if (this.range[i] === this.range[0]) {
+    const optimizedRange = [];
+
+    for (let i = 0; i < this.range.length; i += Math.ceil(this.range.length / 50)) {
+      optimizedRange.push(this.range[i]);
+    }
+
+    if (optimizedRange[optimizedRange.length - 1] !== this.range[this.range.length]) {
+      optimizedRange.push(this.range[this.range.length - 1]);
+    }
+
+    for (const item of optimizedRange) {
+      xPlot += (this.maxWidth / this.dataService.getDates(optimizedRange).length) * 0.9;
+      if (item === optimizedRange[0]) {
         continue;
       }
 
-      preCtx.lineTo(this.segment(xPlot), this.ySegment(-this.getPos(this.range[i].v) + startPos));
+      preCtx.lineTo(this.segment(xPlot), this.ySegment(-this.getPos(item.v) + startPos));
     }
 
     preCtx.stroke();
@@ -237,14 +247,14 @@ export class ChartComponent implements OnInit, OnDestroy {
     preCtx.lineWidth = 1;
     xPlot = 0;
 
-    for (let i = 0; i < this.range.length; i += Math.floor(this.range.length / 50)) {
-      xPlot += this.maxWidth / this.dataService.getDates(this.range).length * 80;
-      if (this.range[i] === this.range[0]) {
+    for (const item of optimizedRange) {
+      xPlot += this.maxWidth / this.dataService.getDates(optimizedRange).length * 0.9;
+      if (item === optimizedRange[0]) {
         continue;
       }
 
-      preCtx.fillRect(this.segment(xPlot - 0.2), this.ySegment(-this.getPos(this.range[i].v) + startPos - 3), 60, 15);
-      preCtx.strokeText(this.range[i].t, this.segment(xPlot), this.ySegment(-this.getPos(this.range[i].v) + startPos));
+      preCtx.fillRect(this.segment(xPlot - 0.2), this.ySegment(-this.getPos(item.v) + startPos - 3), 60, 15);
+      preCtx.strokeText(item.t, this.segment(xPlot), this.ySegment(-this.getPos(item.v) + startPos));
 
       preCtx.stroke();
     }
@@ -377,7 +387,6 @@ export class ChartComponent implements OnInit, OnDestroy {
 
     this.subscriptions.push(
       this.type$.subscribe(res => {
-        console.log(res);
         this.dataService.getData(res);
       })
     );
