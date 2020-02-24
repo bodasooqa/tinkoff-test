@@ -1,27 +1,34 @@
-# TinkoffTest
+# Tinkoff Test
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 9.0.1.
+Приложение представляет из себя SPA, которое отображает в виде линейного графика данные о средней температуре и уровне осадков в определенном городе России.
 
-## Development server
+График реализован с помощью *canvas*, без использования сторонних библиотек. 
+Для управления отображением используется слайдер, расположенный под графиком: он имеет края, с помощью которых изменяется диапазон выводимых данных.
+Отрисовка *canvas* оптимизирована всеми известными мне способами, например, пререндеринг, отказ от дробных значений координат.
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+При реализации использованы: *web workers, canvas, svg, "On Push" CD Strategy, Angular Router*.
 
-## Code scaffolding
+Angular 9.0.0, Angular CLI 9.0.1.
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+Данные берутся с Node.js (nest.js) сервера:
+https://github.com/bodasooqa/tinkoff-test-server 
 
-## Build
+### Demo
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+https://tinkoff-test.now.sh
 
-## Running unit tests
+### Management
+
+`npm start` — запускает dev server.
+
+`npm run build` — сборка приложения в каталог *dist/*.
+
+`npm run now` — деплой приложения с помощью сервиса [Zeit](https://zeit.co/bodasooqa).
+
+### Running unit tests
 
 Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
 
-## Running end-to-end tests
+### Running end-to-end tests
 
 Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).

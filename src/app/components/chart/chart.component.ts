@@ -58,7 +58,7 @@ export class ChartComponent implements OnInit, OnDestroy {
   resizeStart = null;
   rect = {
     x: 0,
-    width: 100
+    width: 1000
   };
   range: ITemp[];
 
