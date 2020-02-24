@@ -1,3 +1,5 @@
+/// <reference lib="webworker" />
+
 addEventListener('message', ({ data }) => {
   if (data.range) {
     const optimizedRange = [];
@@ -15,12 +17,6 @@ addEventListener('message', ({ data }) => {
 
   if (data.all) {
     const range = data.all.data.slice(data.all.startRangePoint, data.all.endRangePoint);
-
-    postMessage(range);
-  }
-
-  if (data.rangeForNum) {
-    const range = data.rangeForNum.map(item => item.v);
 
     postMessage(range);
   }
