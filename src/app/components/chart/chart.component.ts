@@ -12,6 +12,7 @@ import { DataService } from '../../services/data.service';
 import { ITemp } from '../../../types';
 import { Observable, Subscription } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 let raf;
 
@@ -35,6 +36,7 @@ export class ChartComponent implements OnInit, OnDestroy {
   sliderAllWidth: number;
   sliderRangeWidth: number;
 
+  // Принимаем значение текущего маршрута
   @Input() private type$: Observable<string>;
 
   data$: Observable<ITemp[]>;
@@ -67,6 +69,7 @@ export class ChartComponent implements OnInit, OnDestroy {
   fixedYGrid = 20;
 
   // Базовые параметры графика
+  type: string = null;
   maxHeight = 24;
   maxWidth = 48;
   step = 20;
@@ -226,6 +229,7 @@ export class ChartComponent implements OnInit, OnDestroy {
     const worker = new Worker('../../services/data.worker', { type: 'module' });
 
     worker.onmessage = ({ data }) => {
+      // Сначала отрисовка координат на оси
       for (const item of data) {
         xPlot += (this.maxWidth / this.dataService.getDates(data).length) * 0.9;
         if (item === data[0]) {
@@ -242,6 +246,7 @@ export class ChartComponent implements OnInit, OnDestroy {
       preCtx.lineWidth = 1;
       xPlot = 0;
 
+      // Затем отрисовка самого линейного графика
       for (const item of data) {
         xPlot += this.maxWidth / this.dataService.getDates(data).length * 0.9;
         if (item === data[0]) {
@@ -257,10 +262,11 @@ export class ChartComponent implements OnInit, OnDestroy {
       this.render(preCanvas);
     };
 
-    worker.postMessage({ range: this.range });
+    worker.postMessage({ range: this.range, step: this.type === 'temperature' ? environment.TEMP_STEP : 12 });
   }
 
   initChart() {
+    // Подготавливаем канвас для отрисовки
     this.ctx.restore();
     this.ctx.clearRect(0, 0, this.canvas.nativeElement.width, this.canvas.nativeElement.height);
 
@@ -273,6 +279,7 @@ export class ChartComponent implements OnInit, OnDestroy {
     return event.clientX - this.sliderRange.nativeElement.getBoundingClientRect().x;
   }
 
+  // Устанавливает диапазон значений
   setRange(): void {
     const worker = new Worker('../../services/data.worker', { type: 'module' });
 
@@ -393,8 +400,10 @@ export class ChartComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.ctx = this.canvas.nativeElement.getContext('2d');
 
+    // Определение данных по текущему маршруту
     this.subscriptions.push(
       this.type$.subscribe(res => {
+        this.type = res;
         this.dataService.getData(res);
       })
     );
@@ -406,6 +415,7 @@ export class ChartComponent implements OnInit, OnDestroy {
       })
     );
 
+    // Определение получения данных
     this.subscriptions.push(
       this.data$.subscribe(res => {
         this.data = res;
@@ -426,6 +436,7 @@ export class ChartComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    // Отписка от всех существующих подписок
     this.subscriptions.forEach(item => {
       item.unsubscribe();
     });

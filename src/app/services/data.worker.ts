@@ -1,10 +1,10 @@
 /// <reference lib="webworker" />
 
 addEventListener('message', ({ data }) => {
-  if (data.range) {
+  if (data.range && data.step) {
     const optimizedRange = [];
 
-    for (let i = 0; i < data.range.length; i += Math.ceil(data.range.length / 50)) {
+    for (let i = 0; i < data.range.length; i += Math.ceil(data.range.length / data.step)) {
       optimizedRange.push(data.range[i]);
     }
 

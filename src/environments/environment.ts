@@ -4,7 +4,8 @@
 
 export const environment = {
   production: false,
-  API_URL: 'https://tinkoff-test-api.now.sh'
+  API_URL: 'https://tinkoff-test-api.now.sh',
+  TEMP_STEP: 50
 };
 
 /*
