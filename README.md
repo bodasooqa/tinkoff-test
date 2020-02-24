@@ -29,11 +29,3 @@ https://tinkoff-test.now.sh
 `npm run build` — сборка приложения в каталог *dist/*.
 
 `npm run now` — деплой приложения с помощью сервиса [Zeit](https://zeit.co/bodasooqa).
-
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
