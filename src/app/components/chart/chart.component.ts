@@ -73,6 +73,8 @@ export class ChartComponent implements OnInit, OnDestroy {
   valStep = 0.5;
   xStartPoint = 4;
   valQty = 0;
+  minVal: number = null;
+  maxVal: number = null;
 
   // Заводим массив подписок для отписки в OnDestroy
   subscriptions: Subscription[] = [];
@@ -84,16 +86,16 @@ export class ChartComponent implements OnInit, OnDestroy {
 
   // Отдает кол-во требуемых сегментов сетки
   private segment(value: number): number {
-    return value * this.step;
+    return Math.round(value * this.step);
   }
 
   // Отдает кол-во требуемых сегментов сетки
   private ySegment(value: number): number {
-    return (value * (this.maxHeight * this.step) / this.valQty - 1) / 3;
+    return Math.round(value * (this.maxHeight * this.step) / this.valQty - 1) / 3;
   }
 
   // Минимальная точка на графике
-  private minVal(): number {
+  private getMinVal(): number {
     const roundMin = Math.round(this.dataService.getMin(this.range));
 
     // Округлять до ближайшего низшего
@@ -101,7 +103,7 @@ export class ChartComponent implements OnInit, OnDestroy {
   }
 
   // Максимальная точка на графике
-  private maxVal(): number {
+  private getMaxVal(): number {
     const roundMin = Math.round(this.dataService.getMax(this.range));
 
     // Если значение точки кратно шагу - оставлять, если нет - округлять до ближайшего высшего
@@ -114,7 +116,7 @@ export class ChartComponent implements OnInit, OnDestroy {
 
   // Ограничение диапазона значений в графике
   private allRange(): number {
-    return Math.abs(this.minVal()) + Math.abs(this.maxVal());
+    return Math.abs(this.minVal) + Math.abs(this.maxVal);
   }
 
   // Кратность значений оси Y
@@ -124,7 +126,7 @@ export class ChartComponent implements OnInit, OnDestroy {
 
   // Начальная позиция на графике
   private getPos(value) {
-    return (value - this.minVal()) / 0.5;
+    return (value - this.minVal) / 0.5;
   }
 
   // Создаем новый canvas для предварительного рендеринга
@@ -176,7 +178,7 @@ export class ChartComponent implements OnInit, OnDestroy {
   // Рисует оси
   drawAxes(): void {
     let yPlot = 2 + this.maxHeight;
-    let valStep = this.minVal();
+    let valStep = this.minVal;
     this.valQty = 0;
 
     const preCanvas = this.preCanvas();
@@ -192,7 +194,7 @@ export class ChartComponent implements OnInit, OnDestroy {
     preCtx.textAlign = 'end';
 
     // Ось y
-    while (valStep < this.maxVal() + this.valStep) {
+    while (valStep < this.maxVal + this.valStep) {
       preCtx.strokeText(String(valStep), this.segment(this.xStartPoint - 0.5), this.segment(yPlot));
       preCtx.moveTo(this.segment(this.xStartPoint - 0.4), this.segment(yPlot));
       preCtx.lineTo(this.segment(48), this.segment(yPlot));
@@ -221,45 +223,41 @@ export class ChartComponent implements OnInit, OnDestroy {
     preCtx.moveTo(this.segment(this.xStartPoint), this.segment(26) - this.ySegment(startPos));
     preCtx.translate(this.segment(this.xStartPoint), this.segment(26) - this.ySegment(startPos));
 
-    const optimizedRange = [];
+    const worker = new Worker('../../services/data.worker', { type: 'module' });
 
-    for (let i = 0; i < this.range.length; i += Math.ceil(this.range.length / 50)) {
-      optimizedRange.push(this.range[i]);
-    }
+    worker.onmessage = ({ data }) => {
+      for (const item of data) {
+        xPlot += (this.maxWidth / this.dataService.getDates(data).length) * 0.9;
+        if (item === data[0]) {
+          continue;
+        }
 
-    if (optimizedRange[optimizedRange.length - 1] !== this.range[this.range.length]) {
-      optimizedRange.push(this.range[this.range.length - 1]);
-    }
-
-    for (const item of optimizedRange) {
-      xPlot += (this.maxWidth / this.dataService.getDates(optimizedRange).length) * 0.9;
-      if (item === optimizedRange[0]) {
-        continue;
+        preCtx.lineTo(Math.round(this.segment(xPlot)), Math.round(this.ySegment(-this.getPos(item.v) + startPos)));
       }
-
-      preCtx.lineTo(this.segment(xPlot), this.ySegment(-this.getPos(item.v) + startPos));
-    }
-
-    preCtx.stroke();
-    preCtx.beginPath();
-    preCtx.strokeStyle = '#000000';
-    preCtx.fillStyle = 'rgba(255, 221, 45, 0.7)';
-    preCtx.lineWidth = 1;
-    xPlot = 0;
-
-    for (const item of optimizedRange) {
-      xPlot += this.maxWidth / this.dataService.getDates(optimizedRange).length * 0.9;
-      if (item === optimizedRange[0]) {
-        continue;
-      }
-
-      preCtx.fillRect(this.segment(xPlot - 0.2), this.ySegment(-this.getPos(item.v) + startPos - 3), 60, 15);
-      preCtx.strokeText(item.t, this.segment(xPlot), this.ySegment(-this.getPos(item.v) + startPos));
 
       preCtx.stroke();
-    }
+      preCtx.beginPath();
+      preCtx.strokeStyle = '#000000';
+      preCtx.fillStyle = 'rgba(255, 221, 45, 0.7)';
+      preCtx.lineWidth = 1;
+      xPlot = 0;
 
-    this.render(preCanvas);
+      for (const item of data) {
+        xPlot += this.maxWidth / this.dataService.getDates(data).length * 0.9;
+        if (item === data[0]) {
+          continue;
+        }
+
+        preCtx.fillRect(Math.round(this.segment(xPlot - 0.2)), Math.round(this.ySegment(-this.getPos(item.v) + startPos - 3)), 60, 15);
+        preCtx.strokeText(item.t, Math.round(this.segment(xPlot)), Math.round(this.ySegment(-this.getPos(item.v) + startPos)));
+
+        preCtx.stroke();
+      }
+
+      this.render(preCanvas);
+    };
+
+    worker.postMessage({ range: this.range });
   }
 
   initChart() {
@@ -276,17 +274,27 @@ export class ChartComponent implements OnInit, OnDestroy {
   }
 
   setRange(): void {
+    const worker = new Worker('../../services/data.worker', { type: 'module' });
+
     const piecesPerSegment = this.data.length / this.sliderAllWidth;
 
     const startRangePoint = Math.floor(this.rect.x) * piecesPerSegment;
     const endRangePoint = Math.floor(this.rect.x + this.rect.width) * piecesPerSegment;
 
-    this.range = this.data.slice(startRangePoint, endRangePoint);
+    worker.onmessage = ({ data }) => {
+      this.range = data;
 
-    this.firstRangeDate = this.range[0].t;
-    this.lastRangeDate = this.range[this.range.length - 1].t;
+      this.firstRangeDate = this.range[0].t;
+      this.lastRangeDate = this.range[this.range.length - 1].t;
 
-    this.initChart();
+      // Определяем минимальную и максимальную точку графика
+      this.minVal = this.getMinVal();
+      this.maxVal = this.getMaxVal();
+
+      this.initChart();
+    };
+
+    worker.postMessage({ all: { data: this.data, startRangePoint, endRangePoint } });
   }
 
   // Mousedown событие на передвижение
@@ -369,10 +377,10 @@ export class ChartComponent implements OnInit, OnDestroy {
   onMouseUp(): void {
     if (this.moving || this.resize) {
       cancelAnimationFrame(raf);
+      this.setRange();
     }
 
     if (this.moving) {
-      this.setRange();
       this.moving = false;
     }
 
