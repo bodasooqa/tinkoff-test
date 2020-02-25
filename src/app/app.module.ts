@@ -5,15 +5,14 @@ import { AppComponent } from './app.component';
 import { HttpClientModule } from '@angular/common/http';
 import { ChartComponent } from './components/chart/chart.component';
 import { PreloaderComponent } from './components/preloader/preloader.component';
-import { TemperatureComponent } from './pages/temperature/temperature.component';
+import { DataTypeComponent } from './pages/data-type/data-type.component';
 import { RouterModule, Routes } from '@angular/router';
-import { PrecipitationComponent } from './pages/precipitation/precipitation.component';
 
 
 const routes: Routes = [
   { path: '', redirectTo: 'temperature', pathMatch: 'full' },
-  { path: 'temperature', component: TemperatureComponent },
-  { path: 'precipitation', component: TemperatureComponent },
+  { path: 'temperature', component: DataTypeComponent },
+  { path: 'precipitation', component: DataTypeComponent },
   { path: '**', redirectTo: 'temperature' }
 ];
 
@@ -22,8 +21,7 @@ const routes: Routes = [
     AppComponent,
     ChartComponent,
     PreloaderComponent,
-    TemperatureComponent,
-    PrecipitationComponent
+    DataTypeComponent
   ],
   imports: [
     BrowserModule,

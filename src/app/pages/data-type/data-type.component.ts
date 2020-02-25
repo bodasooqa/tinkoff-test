@@ -4,10 +4,10 @@ import { BehaviorSubject, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-temperature',
-  templateUrl: './temperature.component.html',
-  styleUrls: ['./temperature.component.scss']
+  templateUrl: './data-type.component.html',
+  styleUrls: ['./data-type.component.scss']
 })
-export class TemperatureComponent implements OnInit, OnDestroy {
+export class DataTypeComponent implements OnInit, OnDestroy {
   private _currentPath: BehaviorSubject<string> = new BehaviorSubject<string>(null);
   private urlSubscription: Subscription;
 
